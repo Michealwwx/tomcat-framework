@@ -1,7 +1,7 @@
 package com.reign.netty.tomcat;
 
-import com.reign.bio.http.ReignServlet;
-import com.reign.netty.netty.handler.ReignHandler;
+import com.reign.netty.handler.ReignHandler;
+import com.reign.netty.servlet.ReignNettyServlet;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -10,13 +10,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpRequestEncoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -30,16 +30,13 @@ import java.util.Properties;
  **/
 public class NettyTomcat {
 
-
-    private ServerSocket serverSocket;
-
     private int port;
 
-    private static Map<String, ReignServlet> servletMap = new HashMap<>();
+    private static Map<String, ReignNettyServlet> servletMap = new HashMap<>();
 
     private Properties webXml = new Properties();
 
-    public static Map<String, ReignServlet> getServletMap() {
+    public static Map<String, ReignNettyServlet> getServletMap() {
         return servletMap;
     }
 
@@ -51,7 +48,7 @@ public class NettyTomcat {
         try {
             String WEB_INF = this.getClass().getResource("/").getPath();
 
-            FileInputStream fis = new FileInputStream(WEB_INF + "web.properties");
+            FileInputStream fis = new FileInputStream(WEB_INF + "web1.properties");
 
             webXml.load(fis);
 
@@ -61,7 +58,7 @@ public class NettyTomcat {
                     String servletName = key.replaceAll("\\.url", "");
                     String url = webXml.getProperty(key);
                     String className = webXml.getProperty(servletName + ".className");
-                    ReignServlet obj = (ReignServlet) Class.forName(className).newInstance();
+                    ReignNettyServlet obj = (ReignNettyServlet) Class.forName(className).newInstance();
                     servletMap.put(url, obj);
                 }
                 if (key.endsWith("port")) {
@@ -103,9 +100,10 @@ public class NettyTomcat {
                         @Override
                         protected void initChannel(SocketChannel client) throws Exception {
                             //编解码器
-                            //TODO 顺序有要求，后面讲
+                            //TODO 对进入的请求解析解码，对返回的结果解析编码
                             client.pipeline().addLast(new HttpResponseEncoder());
-                            client.pipeline().addLast(new HttpRequestEncoder());
+                            client.pipeline().addLast(new HttpRequestDecoder());
+
                             //业务处理
                             client.pipeline().addLast(new ReignHandler());
 
@@ -116,8 +114,7 @@ public class NettyTomcat {
                     //针对子线程的配置，保持长连接
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-            ChannelFuture f = null;
-            f = server.bind(port).sync();
+            ChannelFuture f  = server.bind(port).sync();
             System.out.println("Netty - Tomcat  已启动,端口：" + port);
             f.channel().closeFuture().sync();
         } catch (InterruptedException e) {

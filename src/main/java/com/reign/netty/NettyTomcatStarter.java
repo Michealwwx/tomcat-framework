@@ -1,5 +1,7 @@
 package com.reign.netty;
 
+import com.reign.netty.tomcat.NettyTomcat;
+
 /**
  * @ClassName BioTomcatStarter
  * @Description 采用netty重构tomcat IO模型
@@ -8,4 +10,9 @@ package com.reign.netty;
  * @Version 1.0
  **/
 public class NettyTomcatStarter {
+
+    public static void main(String[] args) {
+        NettyTomcat nettyTomcat = new NettyTomcat();
+        nettyTomcat.start();
+    }
 }

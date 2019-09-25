@@ -1,4 +1,4 @@
-package com.reign.netty.netty.handler;
+package com.reign.netty.handler;
 
 import com.reign.bio.http.ReignRequest;
 import com.reign.netty.http.ReignNettyRequest;
@@ -27,7 +27,7 @@ public class ReignHandler extends ChannelInboundHandlerAdapter {
             //实际业务处理
             String url = reignNettyRequest.getUrl();
             if(NettyTomcat.getServletMap().containsKey(url)){
-                //NettyTomcat.getServletMap().get(url).service(reignNettyRequest,reignNettyResponse);
+                NettyTomcat.getServletMap().get(url).service(reignNettyRequest,reignNettyResponse);
             }
 
         }
